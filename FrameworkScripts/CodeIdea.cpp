@@ -34,9 +34,11 @@ const int loadingDuration = 5000; // Duration of loading in milliseconds
 const int unloadingDuration = 5000; // Duration of unloading in milliseconds
 const int numCycles = 3; // Number of ride cycles
 
+//Reference: https://forum.arduino.cc/t/using-millis-for-timing-a-beginners-guide/483573
 unsigned long startMillis;  //some global variables available anywhere in the program
 unsigned long currentMillis;
 const unsigned long period = 1000;  //the value is a number of milliseconds
+bool currentPeriodState = false;  //initial state
 
 void setup() {
 
@@ -59,19 +61,30 @@ void setup() {
 
 void loop() {
 
+
+
     //Get the current time
     currentMillis = millis();  //get the current "time" (actually the number of milliseconds since the program started)
-    if (currentMillis - startMillis >= period)  //test whether the period has elapsed
+    if (currentMillis - startMillis >= period && currentPeriodState == false)  //test whether the period has elapsed
     {
-        digitalWrite(ledPin, !digitalRead(ledPin));  //if so, change the state of the LED.  Uses a neat trick to change the state
         startMillis = currentMillis;  //IMPORTANT to save the start time of the current LED state.
+        currentPeriodState = true;
     }
-
+    else {
+        currentPeriodState = false;
+    }
 
 
     //Check button states and update ride state accordingly
     operationButtonState = digitalRead(operationButtonPin);
     eStopbuttonState = digitalRead(eStopButtonPin);
+
+    //If emergency stop button is pressed, go to emergency stop state
+    if (eStopbuttonState == HIGH) {
+        currentState = EMERGENCY_STOP;
+        //Call emergency stop function
+        emergencyStopState();
+    }
 
     //If operating button is pressed, start cycle
     if (operationButtonState == HIGH) {
@@ -82,16 +95,12 @@ void loop() {
             //Set current state to loading
             currentState = LOADING;
             //Call loading state function
-            loadingState();
+            loadingState(true);
+            return;
         }
     }
 
-    //If emergency stop button is pressed, go to emergency stop state
-    if (eStopbuttonState == HIGH) {
-        currentState = EMERGENCY_STOP;
-        //Call emergency stop function
-        emergencyStopState();
-    }
+
 
     //Continue current state operations
     continueFunction();
@@ -119,10 +128,16 @@ void continueFunction() {
     default:
         break;
     }
+
+
+
 }
 
-void loadingState() {
+void loadingState(bool initialize = false) {
     
+    if (initialize) {
+        //Do loading initialization operations here
+    }
 
     //Transition to running state
     currentState = RUNNING;
