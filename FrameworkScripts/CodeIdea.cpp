@@ -6,8 +6,8 @@ const int motor1_in2 = 3;
 const int motor1_pwm = 5;
 
 //Button pins
-const int operationButtonPin = 6;
-int operationButtonState = 0;
+const int startButtonPin = 6;
+int startButtonState = 0;
 const int eStopButtonPin = 7;
 int eStopbuttonState = 0;
 
@@ -17,6 +17,8 @@ Servo myServo;
 //States
 enum RideState {
     START_UP,
+    INITIALIZE_RIDE,
+    DELAY,
     RESTING,
     LOADING,
     RUNNING,
@@ -37,8 +39,12 @@ const int numCycles = 3; // Number of ride cycles
 //Reference: https://forum.arduino.cc/t/using-millis-for-timing-a-beginners-guide/483573
 unsigned long startMillis;  //some global variables available anywhere in the program
 unsigned long currentMillis;
-const unsigned long period = 1000;  //the value is a number of milliseconds
-bool currentPeriodState = false;  //initial state
+const unsigned long ONE_SECOND = 1000;
+const unsigned long FIVE_SECONDS = 5000;
+const unsigned long TEN_MILLISECONDS = 10;
+const unsigned long HUNDRED_MILLISECONDS = 100;
+const unsigned long FIFTEEN_SECONDS = 15000;
+
 
 void setup() {
 
@@ -48,35 +54,37 @@ void setup() {
     pinMode(motor1_pwm, OUTPUT);
 
     // Initialize button pins
-    pinMode(operationButtonPin, INPUT);
+    pinMode(startButtonPin, INPUT);
     pinMode(eStopButtonPin, INPUT);
-    
+
     // Attach servo to pin 9
     myServo.attach(9);
 
-    //Set initial state to resting after startup
-    startMillis = millis();  //initial start time
 
+}
+
+void initializeRide() {
+    //Do ride initialization operations here
+
+    currentState = INITIALIZE_RIDE;
+
+    //This one can prob use delay since it is not used during the actual ride cycles
+    
+
+    //After initialization, go to resting state
+    currentState = RESTING;
 }
 
 void loop() {
 
-
-
-    //Get the current time
-    currentMillis = millis();  //get the current "time" (actually the number of milliseconds since the program started)
-    if (currentMillis - startMillis >= period && currentPeriodState == false)  //test whether the period has elapsed
-    {
-        startMillis = currentMillis;  //IMPORTANT to save the start time of the current LED state.
-        currentPeriodState = true;
+    //If ride is not initialized yet, initialize it
+    if (currentState == START_UP) {
+        initializeRide();
+        return;
     }
-    else {
-        currentPeriodState = false;
-    }
-
 
     //Check button states and update ride state accordingly
-    operationButtonState = digitalRead(operationButtonPin);
+    startButtonState = digitalRead(startButtonPin);
     eStopbuttonState = digitalRead(eStopButtonPin);
 
     //If emergency stop button is pressed, go to emergency stop state
@@ -87,7 +95,7 @@ void loop() {
     }
 
     //If operating button is pressed, start cycle
-    if (operationButtonState == HIGH) {
+    if (startButtonState == HIGH) {
 
         //If the current state is resting, go to loading state
         if (currentState == RESTING) {
@@ -105,7 +113,7 @@ void loop() {
     //Continue current state operations
     continueFunction();
 
-    //Do cool light effect function calls here
+    //Do cool light effect function calls or other stuff here
 
 }
 
@@ -125,6 +133,9 @@ void continueFunction() {
     case EMERGENCY_STOP:
         emergencyStopState();
         break;
+    case DELAY:
+        delayState();
+        break;
     default:
         break;
     }
@@ -134,57 +145,121 @@ void continueFunction() {
 }
 
 void loadingState(bool initialize = false) {
-    
+
+
     if (initialize) {
         //Do loading initialization operations here
+        startMillis = millis();  //initial start time
     }
 
-    //Transition to running state
-    currentState = RUNNING;
-    //Call running state function
-    runningState();
-}
+    //Occurs every ten milliseconds
+    if (periodElapsed(startMillis, TEN_MILLISECONDS)) {
+
+        //Do loading operations like motor movements here
 
 
-void unloadingState() {
+    }
 
-    //Do unloading operations here
 
-    //Transition to resting state
-    currentState = RESTING;
-    //Call resting state function
-    restingState();
 
-}
 
-void restingState() {
+    if (true /*loading completed*/) {
 
-    //Do resting operations here
+        //Transition to running state
+        currentState = RUNNING;
+        //Call running state function
+        runningState();
+    }
 
 }
+
+
+void unloadingState(bool initiaize = false) {
+
+    if (initialize) {
+        //Do unloading initialization operations here
+        startMillis = millis();  //initial start time
+    }
+
+    //Occurs every ten milliseconds
+    if (periodElapsed(startMillis, TEN_MILLISECONDS)) {
+
+        //Do unloading operations like motor movements here
+
+
+    }
+
+
+
+
+    if (true /*unloading completed*/) {
+
+        //Transition to delay state
+        currentState = DELAY;
+        //Call delay state function
+        delayState();
+    }
+
+}
+
 
 void emergencyStopState() {
 
 
-    if (currentState != RESTING) {
-        //Do emergency stop operations here (if it currently isn't in the rest state)
+    //Uhh idk yet but it prob involves stopping motors and stuff
 
-    }
 
-    //Transition to resting state
-    currentState = RESTING;
-    //Call resting state function
-    restingState();
 }
 
 
 
-void runningState() {
+void runningState(bool initialize = false) {
 
-    //Do running operations here
+    if (initialize) {
+        //Do running initialization operations here
+        startMillis = millis();  //initial start time
+    }
 
-    //Transition to unloading state
-    currentState = UNLOADING;
-    //Call unloading state function
-    unloadingState();
+    //Occurs every ten milliseconds
+    if (periodElapsed(startMillis, TEN_MILLISECONDS)) {
+
+        //Do running operations like motor movements here
+
+
+    }
+
+
+
+
+    if (true /*running completed*/) {
+
+        //Transition to unloading state
+        currentState = UNLOADING;
+        //Call unloading state function
+        unloadingState();
+    }
+}
+
+void delayState() {
+
+    //Utility function to create delays without blocking
+    startMillis = millis();  //initial start time
+    if (periodElapsed(startMillis, FIFTEEN_SECONDS)) {
+        //Delay completed, begin loading again
+        currentState = LOADING;
+        loadingState(true);
+    }
+
+
+}
+
+
+//Utility function for timing using millis()
+bool periodElapsed(unsigned long &previousMillis, const unsigned long interval) {
+    unsigned long currentMillis = millis();
+    if (currentMillis - previousMillis >= interval) {
+        previousMillis = currentMillis;
+        return true;
+    }
+    return false;
 }
