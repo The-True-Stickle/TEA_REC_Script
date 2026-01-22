@@ -12,7 +12,7 @@ const int eStopButtonPin = 7;
 int eStopbuttonState = 0;
 
 // Servo
-Servo myServo;
+//Servo myServo;
 
 //States
 enum RideState {
@@ -29,7 +29,7 @@ enum RideState {
 //Initial state at Start up
 RideState currentState = START_UP;
 
-//Consts
+//Consts (example)
 const int motorSpeed = 200; // PWM value for motor speed
 const int rideDuration = 10000; // Duration of the ride in milliseconds
 const int loadingDuration = 5000; // Duration of loading in milliseconds
@@ -168,7 +168,7 @@ void loadingState(bool initialize = false) {
         //Transition to running state
         currentState = RUNNING;
         //Call running state function
-        runningState();
+        runningState(true);
     }
 
 }
@@ -236,7 +236,7 @@ void runningState(bool initialize = false) {
         //Transition to unloading state
         currentState = UNLOADING;
         //Call unloading state function
-        unloadingState();
+        unloadingState(true);
     }
 }
 
