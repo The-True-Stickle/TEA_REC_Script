@@ -13,6 +13,8 @@ const int startPin = 13;
 const int restartPin = 2;  
 const int eStopPin = 3; 
 
+int startButtonState = 0;
+
 //Servo
 Servo pistonServo;
 const int pistonServoPin = 11;
@@ -86,10 +88,20 @@ void changeCurrentState(RideState newState) {
   currentState = newState;
 
   //Send signal here
+
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
+  //If ride is not initialized yet, initialize it
+  if (currentState == START_UP) {
+      initializeRide();
+      return;
+  }
+
+  //Check button states and update ride state accordingly
+  startButtonState = digitalRead(startPin);
+
+  
 
 }
 
@@ -98,5 +110,7 @@ void restartButton() {
 }
 
 void eStop() {
-  
+  changeCurrentState(EMERGENCY_STOP);
+  //Call emergency stop function
+  //emergencyStopState();
 }
