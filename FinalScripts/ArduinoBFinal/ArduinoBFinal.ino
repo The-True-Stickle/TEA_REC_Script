@@ -16,8 +16,8 @@ bool currentlyRunning = false;
 */
 
 // Motor pin connections
-const int directionPin = 2; // direction pin
-const int stepperPin = 3; // step pin
+const int directionPin = 3; // direction pin
+const int stepperPin = 4; // step pin
 
 //Reference: https://forum.arduino.cc/t/using-millis-for-timing-a-beginners-guide/483573
 unsigned long startMillisMotor;
@@ -42,17 +42,21 @@ RunningState currentRunningState;
 
 void setup() {
 
+  Serial.begin(115200);
+  delay(1000);
+  Serial.print("\nConnecting pins\n");
   pinMode(directionPin, OUTPUT);
   pinMode(stepperPin, OUTPUT);
   // set direction of rotation to clockwise
   digitalWrite(directionPin, LOW);
 
   Wire.begin();        // join i2c bus (address optional for master)
-  Serial.begin(9600);
+
+
 
   Serial.print("Done initializing\n");
 
-  
+  Serial.println();
 }
 
 void runStandardOperation(bool initiaize = false) {
@@ -129,12 +133,21 @@ void runStandardOperation(bool initiaize = false) {
   
 }
 
+
+
 void loop() {
 
+//Serial.print("Loop1\n");
   Wire.requestFrom(8, 1);    // request 1 byte from peripheral device #8
-
+  //Serial.print("Loop\n");
+  delay(1000);
   while (Wire.available()) { // peripheral may send less than requested
     int newState = Wire.read(); // receive a byte as character
+
+    if (currentState == 4) {
+      runStandardOperation();
+    }
+
     if (currentState != newState) {
       currentState = newState;        // print the character
       Serial.print("New State Found: ");
@@ -152,15 +165,14 @@ void loop() {
       }
     }
     
+    
+
 
     
 
   }
 
-  if (currentState == 4) {
-    runStandardOperation();
-  }
-  
+
   
 
 }

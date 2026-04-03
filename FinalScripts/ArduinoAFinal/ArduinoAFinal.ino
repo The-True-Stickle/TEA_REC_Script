@@ -17,7 +17,7 @@ int startButtonState = 0;
 
 //Servo
 Servo pistonServo;
-const int pistonServoPin = 11;
+const int pistonServoPin = 10;
 //Angle 0 is the piston at resting state (ride in safe resting position for loading)
 int pistonAngle = 0;
 
@@ -97,11 +97,12 @@ void DisplayLED(bool initialize = false) {
 void setup() {
 
   //Open serial for debug
-  Serial.begin(9600);
+  Serial.begin(115200);
 
   Serial.print("\nSetup Procedure Started\n");
 
   Serial.print("Syncing the I2C Signal\n");
+  delay(1000);
   //Sync the I2C Signal
   Wire.begin(8);             // join i2c bus with address #8
   Wire.onRequest(getState); // register event
@@ -115,7 +116,7 @@ void setup() {
 
   //Connect the buttons to the pin numbers
   pinMode(startPin, INPUT);
-  attachInterrupt(digitalPinToInterrupt(restartPin), restartButton, HIGH);
+  //attachInterrupt(digitalPinToInterrupt(restartPin), restartButton, LOW);
 
   Serial.print("Connecting the servo\n");
 
@@ -144,7 +145,7 @@ void setup() {
 
 void getState() {
   Wire.write(currentState);
-
+  //Wire.endTransmission();
 }
 
 //Change the ride state here so it can also send the signal to the child Arduino
@@ -199,8 +200,8 @@ void restartRide(bool initialize = false) {
 
 void restartButton() {
   //Call for an immediate ride restart
-  changeCurrentState(RESTARTING);
-  restartRide(true);
+  //changeCurrentState(RESTARTING);
+  //restartRide(true);
 }
 
 
@@ -260,6 +261,9 @@ void runningState(bool initialize = false) {
           }
           break;
         case HOLDING:
+
+          pistonServo.write(180);
+
           //Keep it like that until ten seconds are up
           if (periodElapsed(startMillis, TWENTY_SIX_SECONDS)) {
             
@@ -366,7 +370,7 @@ void loop() {
     FastLED.show();
 
   //If operating button is pressed, start cycle
-  if (startButtonState == HIGH) {
+  if (startButtonState == LOW) {
 
       //If the current state is resting, go to loading state
       if (currentState == RESTING) {
@@ -377,6 +381,14 @@ void loop() {
           loadingState(true);
           return;
       }
+  }
+
+  //If restart button is pressed, trigger restart
+  if (startButtonState == LOW && currentState != RESTARTING) {
+
+    changeCurrentState(RESTARTING);
+    restartRide(true);
+    return;
   }
   
   DisplayLED();
